@@ -1,0 +1,124 @@
+
+-- LEVEL 9 — TRIGGERS, PROCEDURES, AND FUNCTIONS
+
+-- What does the trigger trg_after_order do?
+
+	/*Update the stocks of books when there is any book orders. Lets say stock is 6, if a book is ordered,
+	as soon order gets, trigger goes and remove one stock from the inventory */
+
+-- Write a query to check that the trigger reduced the Books.stock_quantity after an order.
+
+SELECT name, type_desc
+FROM sys.objects
+WHERE parent_object_id = OBJECT_ID('Orders');
+
+ALTER TABLE Orders
+DROP COLUMN order_id;
+
+ALTER TABLE Orders
+ADD order_id INT IDENTITY(1,1) PRIMARY KEY;
+
+exec Placeorder 1,1,1 ; - -- not running coz insert is failing as it is trying to insert null record. To allow this to insert we need to change order_id to increase automatically. Hence we need to alter 
+
+-- Execute the stored procedure PlaceOrder to order 1 copy of Book ID 3 for Customer ID 2.
+
+exec Placeorder 2,3,1 ; 
+
+-- Modify the PlaceOrder procedure to also record a log entry in an Order_Log table.
+
+ALTER PROCEDURE PlaceOrder
+	@CustomerID INT,
+	@BookID INT,
+	@Quantity INT
+AS
+BEGIN
+	SET NOCOUNT ON; -- this is to supress msgs like "rows affected", otherwise load on the system will be high for printing these on to log
+
+	DECLARE @NewOrderID INT;
+
+	BEGIN TRY
+
+		-- Insert the order and get the new order id
+		INSERT INTO Orders (customer_id, book_id, quantity)
+		VALUES (@CustomerID, @BookID, @Quantity);
+
+		--Capture the auto-generated order_id
+
+		SET @NewOrderID = SCOPE_IDENTITY()
+
+		-- Insert a log entry
+
+		INSERT INTO Order_log(order_id, log_message)
+		Values (@newOrderID, CONCAT('order placed for customer id'= '@CustomerID')
+
+	END TRY
+	BEGIN CATCH
+
+		-- Optional : Handle Errors
+		DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+		RAISEERROR ('Error placing order:%s',16,1,@ErrorMessage);
+	END CATCH
+END
+
+	-- SCOPE_IDENTITY() gets the auto-generated order_id from the Orders table after the insert.
+
+
+
+-- Explain the difference between a trigger and a stored procedure.
+	
+	-- Trigger: Executes automatically after or before a specific table event.
+		-- Example: After a new order is inserted, update inventory.
+	-- Stored Procedure: Executes manually when a user or application calls it.
+
+-- LEVEL 10 — ADVANCED (JOINS + AGGREGATION + SUBQUERIES)
+
+-- Find customers who ordered all available books.
+
+
+-- Show books that are ordered by more than one customer.
+
+select b.title, count(c.customer_id) from Orders o
+JOIN Books b on o.book_id = b.book_id
+JOIN Customers c on o.customer_id = c.customer_id
+group by title
+having count(c.customer_id)>1
+
+-- Display each customer’s most expensive order.
+
+select c.first_name, max(price) from Orders o
+JOIN Books b on o.book_id = b.book_id
+JOIN Customers c on o.customer_id = c.customer_id
+group by c.first_name 
+
+
+select * from Customers;
+
+select * from Books;
+
+select * from Orders;
+
+-- Show the total revenue per month using DATENAME() or FORMAT().
+
+select DATENAME(MONTH, o.order_date) as monthname,
+		YEAR(o.order_date) as orderyear,
+		(b.price * o.quantity) as total_price
+from Orders o
+JOIN Books b on o.book_id = b.book_id
+JOIN Customers c on o.customer_id = c.customer_id
+
+
+
+-- Create a summary report view that shows each customer, number of orders, total quantity, and tot
+
+Create View Summary_report 
+as
+select (c.first_name + c.last_name) as customer_name,
+count(o.Order_id) as numberoforders,
+sum(o.quantity) as totalorders,
+sum(b.price) as totalprice
+from Orders o
+JOIN Books b on o.book_id = b.book_id
+JOIN Customers c on o.customer_id = c.customer_id
+group by (c.first_name + c.last_name)
+
+select * from Summary_report

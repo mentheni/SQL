@@ -1,0 +1,46 @@
+LEVEL 8 — INDEXES, VIEWS & PERFORMANCE
+
+-- What is the purpose of the index idx_orders_customer_book?
+
+    -- In short: The index exists to improve query performance on customer and book columns, 
+    -- especially for filtering, joining, and grouping operations.
+
+-- How would you check what indexes exist on the Orders table?
+
+EXEC sp_helpindex 'Orders'; 
+
+-- Query the CustomerOrders view to list all customer names and book titles.
+
+
+select * from CustomerOrders
+
+-- Why might a view be better than a complex join?
+/*
+1️⃣ Simplifies query writing
+2️⃣ Reusability
+    Once the view exists, anyone can query it without repeating the join logic.
+    This reduces errors and saves time.
+3️⃣ Encapsulation
+    Views hide complex business logic from end users.
+    Users don’t need to know how tables are joined or filtered — they just query the view.
+4️⃣ Consistency
+    If you have a standard way of calculating something (like recent orders, total sales, or inventory status), a view ensures everyone sees the same result.
+    No risk of slightly different join conditions in multiple queries.
+5️⃣ Security / Access Control
+    You can grant access to a view without giving direct access to the underlying tables.
+    Example: Users can see recent_orders without having access to the full orders, customers, or books tables.
+6️⃣ Potential performance benefits
+    For frequently used joins, some databases (like MySQL with materialized views or indexed views in SQL Server) can precompute results, improving query speed.
+    Even regular views can sometimes let the database optimize execution more efficiently than ad-hoc complex joins.
+
+*/
+-- How can you improve query performance for frequently used filters?
+/*
+using indexes (multiple index for multiple cols in where clause)
+Split partitions
+Use Materialized views, these precompute and store data for frequent query.
+Optimizing query logic
+caching (stores data in cache for frequently queried queries)
+Update Statistics - When data changes (inserts, updates, deletes), statistics can become out of date.
+    Out-of-date statistics can cause the optimizer to pick inefficient query plans, e.g., scanning the whole table instead of using an index.
+Denormalization - Sometime denormailisation is needed.

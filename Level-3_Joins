@@ -1,0 +1,56 @@
+-- LEVEL 3 — JOINS
+
+-- Show all orders along with the customer’s full name and book title.
+
+
+select c.first_name, c.last_name, b.title 
+from Customers c 
+JOIN Orders o on c.customer_id = o.customer_id
+JOIN Books b on o.book_id = b.book_id
+
+select * from Books
+select * from Customers
+select * from Orders
+
+
+-- Find the total quantity of books ordered by each customer.
+
+select c.customer_id,c.first_name, c.last_name, sum(o.quantity )
+from Customers c 
+JOIN Orders o on c.customer_id = o.customer_id
+JOIN Books b on o.book_id = b.book_id
+group by c.customer_id,c.first_name, c.last_name
+
+
+
+-- List customers who ordered ‘SQL Fundamentals’.
+
+select c.customer_id,c.first_name, c.last_name, b.title
+from Customers c 
+JOIN Orders o on c.customer_id = o.customer_id
+JOIN Books b on o.book_id = b.book_id
+where b.title = 'SQL Fundamentals'
+
+
+-- Show all books that have never been ordered.
+
+delete from Orders where book_id = 3
+
+select title from Books where book_id not in (select book_id from Orders )
+
+select * from Books
+select * from Customers
+select * from Orders
+
+
+-- Show the most recent order date for each customer.
+
+select c.customer_id, MAX(o.order_date)
+from Customers c 
+JOIN Orders o on c.customer_id = o.customer_id 
+group by c.customer_id
+
+
+
+
+

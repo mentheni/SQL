@@ -1,0 +1,62 @@
+-- LEVEL 7 — WINDOW FUNCTIONS
+
+-- Rank books by price (highest first).
+
+select book_id, title, price, rank() over (order by price DESC) as rank_price
+from Books
+
+-- Show cumulative revenue (SUM(quantity * price)) per customer ordered by date.
+
+SELECT 
+    c.customer_id,
+    c.first_name,
+    o.order_date,
+    SUM(b.price * o.quantity) AS order_revenue,
+    SUM(b.price * o.quantity) 
+        OVER (PARTITION BY c.customer_id ORDER BY o.order_date 
+              ROWS UNBOUNDED PRECEDING) AS cumulative_revenue
+FROM Orders o
+JOIN Customers c ON o.customer_id = c.customer_id
+JOIN Books b ON o.book_id = b.book_id
+GROUP BY c.customer_id, c.first_name, o.order_date
+ORDER BY c.customer_id, o.order_date;
+
+
+-- Show running total of orders for each customer.
+
+SELECT 
+    c.customer_id,
+    c.first_name,
+    o.order_date,
+    COUNT(o.order_id) 
+        OVER (PARTITION BY c.customer_id ORDER BY o.order_date 
+              ROWS UNBOUNDED PRECEDING) AS running_total_orders
+FROM Orders o
+JOIN Customers c ON o.customer_id = c.customer_id
+ORDER BY c.customer_id, o.order_date;
+
+-- Find the top 2 most expensive books using DENSE_RANK().
+
+SELECT 
+    book_id,
+    title,
+    price,
+    DENSE_RANK() OVER (ORDER BY price DESC) AS price_rank
+FROM Books;
+
+WITH RankedBooks AS (
+    SELECT 
+        book_id,
+        title,
+        price,
+        DENSE_RANK() OVER (ORDER BY price DESC) AS price_rank
+    FROM Books
+)
+SELECT *
+FROM RankedBooks
+WHERE price_rank <= 2
+ORDER BY price DESC;
+
+-- Calculate the difference between each book’s price and the average price (using AVG() OVER()).
+
+select title, price, avg(price)  over () as avgprice, price - avg(price) over() as difference from books 

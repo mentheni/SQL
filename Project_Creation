@@ -1,0 +1,134 @@
+
+CREATE DATABASE OnlineBookstore;
+USE OnlineBookstore;
+
+CREATE or REPLACE TABLE Customers (
+customer_id INT PRIMARY KEY,
+first_name VARCHAR(50) NOT NULL,
+last_name VARCHAR(50) NOT NULL,
+email VARCHAR(100) UNIQUE NOT NULL,
+created_at DATE DEFAULT GETDATE()
+);
+
+
+CREATE TABLE Books (
+
+book_id INT PRIMARY KEY,
+title VARCHAR(100) NOT NULL,
+author VARCHAR(50),
+price DECIMAL(8,2) NOT NULL,
+stock_quantity INT DEFAULT 0 );
+
+
+
+CREATE  TABLE Orders(
+
+order_id INT PRIMARY KEY IDENTITY(1,1),
+customer_id INT,
+book_id INT,
+quantity INT DEFAULT 1,
+order_date DATE DEFAULT GETDATE(),
+FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+FOREIGN KEY (book_id) REFERENCES Books(book_id) ) ;
+
+
+
+Insert into Customers (customer_id, first_name,
+last_name, email,created_at) VALUES 
+(1, 'Alice', 'Johnson', 'alice@example.com', '2025-01-10'),
+(2, 'Bob', 'Smith', 'bob@example.com', '2025-02-12'),
+(3, 'Carol', 'Davis', 'carol@example.com', '2025-03-05');
+
+
+-- Books
+INSERT INTO Books (book_id, title, author, price, stock_quantity) VALUES
+(1, 'SQL Fundamentals', 'John Doe', 49.99, 100),
+(2, 'Advanced PL/SQL', 'Jane Roe', 79.99, 50),
+(3, 'Database Design', 'Mike Smith', 59.99, 75);
+
+-- Orders
+INSERT INTO Orders (order_id, customer_id, book_id, quantity, order_date) VALUES
+(1, 1, 1, 2, '2025-04-01'),
+(2, 2, 3, 1, '2025-04-02'),
+(3, 1, 2, 1, '2025-04-05'),
+(4, 3, 1, 1, '2025-04-06');
+
+
+
+select * from Customers;
+select * from Books;
+select * from Orders;
+
+
+-- Create INDEX
+
+CREATE INDEX idx_orders_customer on Orders(customer_id);
+CREATE INDEX idx_orders_customer_book on Orders(customer_id, book_id);
+
+--Create Views
+
+CREATE VIEW Customerorders AS
+SELECT o.order_id,
+		c.first_name + ' '+ c.last_name as customer_name,
+		b.title as book_title,
+		o.quantity,
+		o.order_date 
+FROM Orders o
+JOIN Customers c on o.customer_id = c.customer_id
+JOIN Books b on o.book_id = b.book_id;
+
+-- Create Trigger (update stock after order)
+
+
+CREATE TRIGGER trg_after_order
+ON Orders
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Update the stock of books based on the newly inserted orders
+    UPDATE b
+    SET b.stock_quantity = b.stock_quantity - i.quantity
+    FROM Books b
+    INNER JOIN inserted i ON b.book_id = i.book_id;
+END;
+GO
+
+-- Create a Stored procedure to make an order
+
+CREATE PROCEDURE Placeorder
+    @p_customer_id INT,
+    @p_book_id INT,
+    @p_quantity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @current_stock INT;
+
+    SELECT @current_stock = stock_quantity
+    FROM Books
+    WHERE book_id = @p_book_id
+
+    IF @current_stock < @p_quantity
+    BEGIN
+        RAISERROR('Not enough stock!', 16,1);
+    END
+    ELSE
+    BEGIN
+
+        -- Insert Order
+        INSERT INTO Orders (customer_id, book_id, quantity)
+        VALUES (@p_customer_id, @p_book_id, @p_quantity);
+
+        --update stock
+
+        UPDATE Books
+        SET stock_quantity = stock_quantity - @p_quantity
+        where book_id = @p_book_id;
+    END
+END;
+GO
+
+

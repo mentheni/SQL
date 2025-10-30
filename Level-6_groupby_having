@@ -1,0 +1,36 @@
+-- LEVEL 6 — GROUP BY, HAVING & DISTINCT
+
+-- Count how many distinct customers placed orders.
+
+select count(distinct customer_id) as total_customers from Orders
+
+-- Show the total revenue per customer (SUM(quantity * price)).
+
+select c.first_name, SUM(b.price * o.quantity) as total_price
+from Customers c
+JOIN Orders o on c.customer_id = o.customer_id
+JOIN Books b on o.book_id = b.Book_id
+group by c.first_name
+
+-- Show average order quantity grouped by book.
+
+select b.title, avg(o.quantity)
+from Orders o
+JOIN Books b on o.book_id = b.Book_id
+group by b.title
+
+
+-- Find books that have been ordered more than 2 times.
+
+select b.title, count(o.order_id)
+from Orders o
+JOIN Books b on o.book_id = b.Book_id
+group by b.title
+having count(o.order_id)>2
+
+
+--  Display authors with more than one book in the database.
+
+-- INSERT into Books values(4, 'Python Fundamentals', 'John Doe',69.99, 30)
+
+select author, count(title) from Books group by author having count(title) > 1

@@ -1,0 +1,26 @@
+-- LEVEL 5 — STRING, DATE & MATH FUNCTIONS
+
+-- Concatenate first name and last name of customers as FullName.
+
+select first_name + ' ' + Last_name as Full_name from Customers
+
+-- Extract the year from each customer’s created_at date.
+
+select *, year(created_at) as year_created from Customers
+
+-- Round the price of each book to the nearest integer.
+
+select *, ROUND(price,0) as rounded_price from Books
+
+-- Find all customers whose first name starts with ‘A’.
+
+select first_name from Customers where first_name like 'A%'
+
+-- Display books where the author’s name contains ‘Smith’.
+
+select * from Books where author like '%Smith%'
+
+
+select * from Orders
+select * from Customers
+select * from Books
